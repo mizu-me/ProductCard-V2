@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MISUMI 상품 카드</title>
+<style>
+  :root{ --navy:#163a7a; --navy-dark:#0f2c5e; --bg:#f2f4f7; --line:#dfe3e8; --sub:#6b7280; --yellow:#ffc107; }
+  *{ margin:0; padding:0; box-sizing:border-box; font-family:'Malgun Gothic','맑은 고딕',-apple-system,sans-serif; }
+  body{ background:var(--bg); color:#1a1a1a; }
+  body.has-tray{ padding-bottom:132px; }
+
+  header{ background:var(--navy); color:#fff; padding:12px 24px; display:flex; align-items:center; gap:12px; }
+  header h1{ font-size:18px; font-weight:800; }
+  header .sub{ font-size:12px; opacity:.8; margin-top:2px; }
+  header .sp{ flex:1; }
+  .home{ background:#f6c445; color:#1a2233; font-weight:800; font-size:13px; padding:8px 14px; border-radius:8px; text-decoration:none; }
+
+  .searchbar{ position:sticky; top:0; z-index:20; background:var(--bg); padding:14px 24px 10px; border-bottom:1px solid var(--line); }
+  .inner{ max-width:1100px; margin:0 auto; }
+  .searchwrap{ position:relative; }
+  .search{ width:100%; padding:14px 44px 14px 18px; border-radius:10px; border:1px solid var(--line); font-size:16px; background:#fff; }
+  .search:focus{ outline:2px solid var(--navy); }
+  .clear{ position:absolute; right:10px; top:50%; transform:translateY(-50%); width:28px; height:28px; border:none; border-radius:50%; background:#e9ecf0; color:#555; font-size:14px; cursor:pointer; display:none; }
+  .fchips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .fchip{ padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:#fff; font-size:12.5px; font-weight:700; color:#444; cursor:pointer; }
+  .fchip small{ opacity:.6; font-weight:400; margin-left:4px; }
+  .fchip.on{ background:var(--navy-dark); color:#fff; border-color:var(--navy-dark); }
+  .fchip.eco{ border-style:dashed; }
+  .searchhint{ margin-top:8px; font-size:12px; color:var(--sub); }
+
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 24px 40px; }
+  .bar2{ background:#1f1f1f; color:var(--yellow); text-align:center; font-weight:800; font-size:18px; padding:14px; border-bottom:4px solid var(--yellow); margin-top:18px; }
+  .tgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px 14px; padding:18px 4px; }
+
+  .tile{ text-align:center; cursor:pointer; user-select:none; }
+  .timg{ aspect-ratio:1/1; background:#fff; border:1px solid var(--line); border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; transition:border-color .12s, box-shadow .12s; }
+  .timg img{ max-width:100%; max-height:100%; display:block; }
+  .timg .noimg{ color:#9aa0a6; font-size:12px; }
+  .tile:hover .timg{ border-color:var(--navy); box-shadow:0 3px 10px rgba(22,58,122,.18); }
+  .tile.on .timg{ border:2px solid var(--navy); background:#f3f7fd; }
+  .chk{ position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,.95); border:2px solid #c7ccd4; color:#fff; font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .tile.on .chk{ background:var(--navy); border-color:var(--navy); }
+  .tile.on .chk::after{ content:'✓'; }
+  .ecotag{ position:absolute; top:6px; left:6px; background:#e8eefb; color:#2b4a86; font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:999px; }
+  .tname{ font-size:13px; margin-top:8px; font-weight:600; color:#222; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .tmodel{ font-size:11px; color:#8a929c; margin-top:2px; word-break:break-all; }
+
+  details.grp{ background:#fff; border:1px solid var(--line); border-radius:8px; margin-top:10px; }
+  details.grp > summary{ cursor:pointer; padding:12px 16px; font-weight:700; font-size:14px; }
+  details.grp > summary small{ color:var(--sub); font-weight:400; margin-left:6px; }
+  .resulthead{ font-size:13px; color:var(--sub); margin:18px 2px 0; }
+  .empty{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:28px; text-align:center; color:var(--sub); margin-top:18px; font-size:14px; line-height:1.7; }
+  .loading{ text-align:center; padding:60px; color:var(--sub); }
+
+  #tray{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); box-shadow:0 -3px 12px rgba(0,0,0,.1); padding:10px 24px 12px; display:none; z-index:40; }
+  #tray.show{ display:block; }
+  .chips{ display:flex; gap:6px; flex-wrap:wrap; max-height:58px; overflow:auto; margin-bottom:8px; }
+  .chip{ background:#eef3fb; color:#163a7a; font-size:12px; font-weight:700; padding:4px 6px 4px 10px; border-radius:999px; display:flex; align-items:center; gap:6px; max-width:260px; }
+  .chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip button{ border:none; background:#d5e0f3; color:#163a7a; width:18px; height:18px; border-radius:50%; font-size:11px; cursor:pointer; line-height:18px; flex-shrink:0; }
+  .tray-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .tray-row .n{ font-weight:800; color:var(--navy); margin-right:auto; }
+  .tray-row label{ font-size:12.5px; color:#444; display:flex; align-items:center; gap:6px; }
+  .tray-row select{ padding:7px 8px; border-radius:6px; border:1px solid var(--line); font-size:13px; }
+  .btn{ padding:10px 16px; border-radius:8px; border:1px solid var(--line); background:#fff; font-weight:700; font-size:13px; cursor:pointer; }
+  .btn.primary{ background:var(--navy-dark); color:#fff; border-color:var(--navy-dark); }
+
+  #modal{ position:fixed; inset:0; background:rgba(15,25,50,.55); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; overflow:auto; z-index:80; }
+  #modal.show{ display:flex; }
+  .mbox{ background:#fff; width:min(900px,100%); border-radius:12px; overflow:hidden; }
+  .mhead{ display:flex; align-items:center; gap:10px; padding:14px 20px; border-bottom:1px solid var(--line); }
+  .mhead b{ font-size:15px; }
+  .mhead .sp{ flex:1; }
+  .mbody{ padding:18px 20px; background:#fff; overflow:auto; }
+  .tip{ background:#fff8e1; border-top:1px solid #f1e2a8; padding:12px 20px; font-size:12.5px; line-height:1.7; color:#5b4a00; }
+  #toast{ position:fixed; bottom:150px; left:50%; transform:translateX(-50%); background:#1a2233; color:#fff; padding:11px 20px; border-radius:8px; font-size:13.5px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:99; max-width:92vw; text-align:center; line-height:1.5; }
+  #toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>MISUMI 상품 카드</h1>
+    <div class="sub">카드를 눌러 선택하고, 아래 [복사]를 누른 뒤 Outlook 본문에 붙여넣으세요.</div>
+  </div>
+  <div class="sp"></div>
+  <a class="home" href="https://misumi-sales-hub.pages.dev/" target="_blank" rel="noopener">🏠 홈</a>
+</header>
+
+<div class="searchbar"><div class="inner">
+  <div class="searchwrap">
+    <input class="search" id="search" placeholder="상품명(한글) 또는 형번으로 검색  예) 베어링, 액추, ㅂㅇㄹ, E-LBK5" autocomplete="off">
+    <button class="clear" id="clear" title="지우기">✕</button>
+  </div>
+  <div class="fchips" id="fchips"></div>
+  <div class="searchhint" id="hint"></div>
+</div></div>
+
+<div class="wrap" id="app"><div class="loading">불러오는 중…</div></div>
+
+<div id="tray"><div class="inner">
+  <div class="chips" id="chips"></div>
+  <div class="tray-row">
+    <span class="n" id="trayN"></span>
+    <label>한 줄에 <select id="perRow"><option value="2">2장</option><option value="3" selected>3장</option><option value="4">4장</option></select></label>
+    <button class="btn" id="btnPreview">미리보기</button>
+    <button class="btn" id="btnClear">모두 해제</button>
+    <button class="btn" id="btnCopy">복사</button>
+    <button class="btn primary" id="btnMail">복사하고 메일 열기</button>
+  </div>
+</div></div>
+
+<div id="modal">
+  <div class="mbox">
+    <div class="mhead"><b>붙여넣을 모양 미리보기</b><span class="sp"></span><button class="btn primary" id="mCopy">복사</button><button class="btn" id="mClose">닫기</button></div>
+    <div class="mbody" id="mBody"></div>
+    <div class="tip">
+      <b>Outlook에 붙여넣을 때</b><br>
+      1) 메일 본문을 클릭하고 <b>Ctrl+V</b><br>
+      2) 모양이 이상하면 붙여넣은 자리에 생기는 <b>(Ctrl) 아이콘</b> → <b>"원본 서식 유지"</b> 선택<br>
+      3) 사진이 안 보이면 받는 사람 쪽 Outlook의 "그림 다운로드" 설정 때문일 수 있어요 (보내는 쪽에서는 바꿀 수 없음).
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ===== 이전 프로젝트(index.html)에서 그대로 가져온 카드 생성 함수 (Outlook 붙여넣기용으로 다듬어진 코드, 수정하지 않음) ===== */
+// 이전 프로젝트(ProductCard)의 index.html 에서 그대로 가져온 Outlook용 카드 생성 함수. 수정하지 말 것.
+function fmtWon(n){ return '₩' + Math.round(n).toLocaleString() + '원'; }
+function formatDeliveryText(raw){
+  if(!raw) return '';
+  let s = String(raw).trim().replace(/^납기\s*:\s*/, '').trim();
+  if(!s || /문의/.test(s)) return '';
+  if(/당일|재고|즉시/.test(s)) return '재고품';
+  const m = s.match(/(\d+)/);
+  return m ? `${m[1]}일째 출하` : '';
+}
+function badgeTagHtml(c){
+  if(!(c.badge > 0)) return '&nbsp;';
+  return `<table role="presentation" cellpadding="0" cellspacing="0" align="right"><tr>
+    <td bgcolor="#f6c445" style="padding:6px 14px;white-space:nowrap;">
+      <font face="Malgun Gothic" color="#1a2233" size="2"><b>${c.badge}% 할인</b></font>
+    </td>
+  </tr></table>`;
+}
+function cardHtml(c){
+  const FONT = "'Malgun Gothic', Malgun Gothic";
+  // c.img가 비어있을 때 예전엔 <img src=""> 를 그대로 내보내서, Outlook에서 "깨진 이미지"가 아니라
+  // 아무것도 없는 빈 여백으로만 보였다(이미지 없이 만든 카드 - 예: 내근영업에서 만든 카드는 아직
+  // 이미지 매니페스트가 없어 비어있는 경우 - 를 그대로 복사하면 이 빈 칸이 나온 것). 편집 화면(.imgbox)처럼
+  // 이미지가 없으면 "상품 이미지 없음" 안내 박스를 대신 넣어서, 실수로 빈 카드를 보내는 걸 눈에 띄게 한다.
+  const imgTag = c.img
+    ? `<img src="${c.img}" width="230" style="display:block;border:0;">`
+    : `<div style="width:230px;height:160px;background:#f2f4f7;color:#9aa0a6;font-family:${FONT};font-size:13px;text-align:center;line-height:160px;">상품 이미지 없음</div>`;
+  // 고객이 "이 사진을 누르면 상품 페이지로 이동하는구나"를 바로 알 수 있도록, 링크가 실제로 걸려있을 때만
+  // 이미지 바로 아래에 작은 안내 배지를 붙인다(badgeTagHtml과 같은 방식: bgcolor+font 태그만 써서
+  // Outlook "병합 서식" 붙여넣기에도 안 지워지게 함).
+  const clickHintHtml = (c.link && c.img)
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin-top:6px;"><tr>
+        <td bgcolor="#eef3fb" style="padding:5px 12px;">
+          <font face="Malgun Gothic" color="#0A4FA3" size="1">🔗 이미지를 클릭하면 상품 상세페이지로 이동합니다</font>
+        </td>
+      </tr></table>`
+    : '';
+  const imgCell = (c.link && c.img) ? `<a href="${c.link}" target="_blank">${imgTag}</a>${clickHintHtml}` : imgTag;
+  const emphasisList = (c._강조 && c._강조.length) ? c._강조 : [];
+  const borderColor = emphasisList.length ? '#1a56db' : '#e2e5ea';
+  const borderWidth = emphasisList.length ? '3' : '1';
+  const emphasisTagHtml = emphasisList.length
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" align="left"><tr>
+        <td bgcolor="#dbe6fb" style="padding:2px 10px;border-radius:11px;">
+          <font face="Malgun Gothic" color="#1a56db" size="1"><b>${emphasisList.join(' · ')}</b></font>
+        </td>
+      </tr></table>`
+    : '';
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="${borderWidth}" bordercolor="${borderColor}" width="250" style="border-collapse:collapse;font-family:${FONT};">
+<tr>
+  <td bgcolor="#163a7a" style="padding:10px 14px;background-color:#163a7a;mso-line-height-rule:exactly;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
+      <td align="left" valign="middle" bgcolor="#163a7a" style="color:#ffffff;background-color:#163a7a;mso-line-height-rule:exactly;"><font face="Malgun Gothic" color="#ffffff" size="2"><b style="color:#ffffff;"><span style="color:#ffffff !important;">MISUMI</span></b></font></td>
+      <td align="right" valign="middle" bgcolor="#163a7a" style="background-color:#163a7a;">${badgeTagHtml(c)}</td>
+    </tr></table>
+  </td>
+</tr>
+<tr><td bgcolor="#ffffff" align="center" style="padding:10px;">${imgCell}</td></tr>
+<tr><td style="padding:11px 14px;">
+  ${emphasisList.length ? `<div>&nbsp;${emphasisTagHtml}</div>` : ''}
+  <div style="margin-top:8px;color:#1a1a1a;mso-line-height-rule:exactly;"><font face="Malgun Gothic" color="#1a1a1a" size="3"><b style="color:#1a1a1a;">${c.name}</b></font></div>
+  ${c.model ? `<div style="margin-top:4px;color:#444444;mso-line-height-rule:exactly;"><font face="Malgun Gothic" color="#444444" size="2"><span style="color:#444444;">형번 : ${c.model}</span></font></div>` : ''}
+  ${formatDeliveryText(c.delivery) ? `<div style="color:#0A4FA3;mso-line-height-rule:exactly;"><font face="Malgun Gothic" color="#0A4FA3" size="2"><b style="color:#0A4FA3;">${formatDeliveryText(c.delivery)}</b></font></div>` : ''}
+  ${c.salePrice ? `
+  ${c.listPrice > c.salePrice ? `<div style="margin-top:6px;color:#999999;mso-line-height-rule:exactly;"><font face="Malgun Gothic" color="#999999" size="2"><s style="color:#999999;text-decoration:line-through;">${fmtWon(c.listPrice)}</s></font></div>` : ''}
+  <div style="color:#c0122e;mso-line-height-rule:exactly;"><font face="Malgun Gothic" color="#c0122e" size="5"><b style="color:#c0122e;">${fmtWon(c.salePrice)}</b></font></div>
+  ` : ''}
+  ${c.validUntil ? `<div style="margin-top:2px;"><font face="Malgun Gothic" color="#d97706" size="2">가격 유효기간: ${c.validUntil}</font></div>` : ''}
+</td></tr>
+</table>`;
+}
+
+/* ===== 여기까지 ===== */
+
+let CAT = null, ITEMS = [], PUBLIC_BASE = '';
+let selected = [];        // 선택한 상품 id (선택 순서 = 붙여넣는 순서)
+let perRow = 3, query = '', filter = '전체';
+
+/* ---------- 검색용 문자열 처리 ---------- */
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+let ALIASES = [['액츄','액추'],['부싱','부시'],['엘엠','lm']];
+function norm(s){
+  s = String(s == null ? '' : s).toLowerCase().replace(/[\s\-_\/·.,()\[\]&＆:：]+/g, '');
+  ALIASES.forEach(a => { s = s.split(a[0]).join(a[1]); });
+  return s;
+}
+function chosung(s){
+  let out = '';
+  for(const ch of String(s)){
+    const c = ch.charCodeAt(0);
+    if(c >= 0xAC00 && c <= 0xD7A3) out += CHO[Math.floor((c - 0xAC00) / 588)];
+    else if(/[ㄱ-ㅎ]/.test(ch)) out += ch;
+  }
+  return out;
+}
+const isCho = t => /^[ㄱ-ㅎ]+$/.test(t);
+function scoreToken(it, t){
+  // 짧은 영문 검색어(예: lm)는 단어 중간(ZLMB 등)에 걸리면 엉뚱한 결과가 나오므로, 단어/형번의 앞부분과 맞을 때만 인정한다
+  const shortLatin = /^[a-z0-9]{1,3}$/.test(t);
+  const wordStart = () => it.words.some(w => w.startsWith(t));
+  let s = 0;
+  if(it.nModel === t) s = 1000; else if(it.nModel.startsWith(t)) s = 900; else if(!shortLatin && it.nModel.includes(t)) s = 700;
+  if(it.nName === t) s = Math.max(s, 850);
+  else if(it.nName.startsWith(t)) s = Math.max(s, 800);
+  else if(shortLatin ? wordStart() : it.nName.includes(t)) s = Math.max(s, 600);
+  if(!s && (shortLatin ? wordStart() : it.nAlias.includes(t))) s = 400;
+  if(!s && isCho(t)){ if(it.cho.startsWith(t)) s = 500; else if(it.cho.includes(t)) s = 300; }
+  return s;
+}
+const inFilter = it => filter === '전체' || (filter === '경제형' ? it.eco : it.group === filter);
+function visible(){
+  const tokens = query.trim().split(/\s+/).filter(Boolean).map(norm).filter(Boolean);
+  const base = ITEMS.filter(inFilter);
+  if(!tokens.length) return { searching:false, list:base };
+  const out = [];
+  base.forEach(it => {
+    let total = 0;
+    for(const t of tokens){ const s = scoreToken(it, t); if(!s){ total = 0; break; } total += s; }
+    if(total) out.push([total / tokens.length + (it.src === 'pinned' ? 50 : 0), it]);
+  });
+  out.sort((a, b) => b[0] - a[0] || a[1].rank - b[1].rank);
+  return { searching:true, list:out.map(x => x[1]) };
+}
+
+/* ---------- 데이터 ---------- */
+const absUrl = u => !u ? '' : /^https?:/.test(u) ? u : PUBLIC_BASE + u;   // 붙여넣는 카드의 사진은 항상 절대주소여야 Outlook에서 보인다
+function makeCard(it){
+  return { category: it.category, name: it.name, model: it.model, img: absUrl(it.img), link: it.link, delivery: it.delivery || '',
+           listPrice: it.listPrice || 0, salePrice: it.salePrice || 0, badge: 0, checked: true };
+}
+async function init(){
+  try{
+    const r = await fetch('data/catalog.json', { cache:'no-cache' });
+    if(!r.ok) throw new Error('data/catalog.json (' + r.status + ')');
+    CAT = await r.json();
+  }catch(e){
+    document.getElementById('app').innerHTML =
+      '<div class="empty"><b>상품 데이터를 불러오지 못했습니다</b><br>' + e.message +
+      '<br>이 페이지와 같은 위치에 <code>data/catalog.json</code> 이 있어야 합니다.<br>' +
+      '파일을 더블클릭해서 연 경우에는 브라우저 보안 때문에 읽히지 않을 수 있어요. 올려둔 인터넷 주소로 열어 보세요.</div>';
+    return;
+  }
+  // 사진 주소의 기준: 인터넷에 올려서 열면 지금 주소, 내 PC에서 열면 catalog.json 에 적어둔 주소
+  PUBLIC_BASE = /\.(github\.io|pages\.dev)$/.test(location.hostname) ? new URL('.', location.href).href : (CAT.publicBase || '');
+  if(Array.isArray(CAT.aliases)) ALIASES = CAT.aliases;
+  ITEMS = CAT.items;
+  ITEMS.forEach(it => { it.nName = norm(it.name); it.nModel = norm(it.model); it.nAlias = norm(it.alias); it.cho = chosung(it.name); it.words = (it.name + ' ' + it.alias).toLowerCase().split(/[^0-9a-z가-힣]+/).filter(Boolean); });
+  render();
+}
+
+/* ---------- 화면 ---------- */
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tileHtml(it){
+  const on = selected.includes(it.id);
+  const img = it.img ? '<img loading="lazy" src="' + esc(it.img) + '" alt="' + esc(it.name) + '">' : '<span class="noimg">사진 없음</span>';
+  return '<div class="tile' + (on ? ' on' : '') + '" data-k="' + it.id + '" title="' + esc(it.name + (it.model ? ' / ' + it.model : '')) + '">' +
+    '<div class="timg">' + img + (it.eco ? '<span class="ecotag">경제형</span>' : '') + '<span class="chk"></span></div>' +
+    '<div class="tname">' + esc(it.name) + '</div><div class="tmodel">' + esc(it.model) + '</div></div>';
+}
+function renderFilterChips(){
+  const cnt = g => g === '전체' ? ITEMS.length : g === '경제형' ? ITEMS.filter(i => i.eco).length : ITEMS.filter(i => i.group === g).length;
+  const names = ['전체', '경제형'].concat(CAT.groupOrder);
+  document.getElementById('fchips').innerHTML = names.map(g =>
+    '<button class="fchip' + (g === filter ? ' on' : '') + (g === '경제형' ? ' eco' : '') + '" data-f="' + esc(g) + '">' + esc(g) + '<small>' + cnt(g) + '</small></button>').join('');
+}
+function render(){
+  renderFilterChips();
+  const app = document.getElementById('app');
+  const v = visible();
+  document.getElementById('clear').style.display = query ? 'block' : 'none';
+  if(v.searching){
+    document.getElementById('hint').textContent = v.list.length + '건 · 관련도 순으로 정렬됨' + (filter !== '전체' ? ' (' + filter + ' 안에서)' : '');
+    app.innerHTML = v.list.length ? '<div class="tgrid">' + v.list.map(tileHtml).join('') + '</div>'
+      : '<div class="empty">검색 결과가 없습니다.<br>형번 일부(예: LBK5)나 다른 표기(예: 액추에이터/액츄에이터)로 다시 찾아보세요.' + (filter !== '전체' ? '<br>위쪽 "전체"를 눌러 모든 상품에서 찾아볼 수도 있어요.' : '') + '</div>';
+  }else if(filter !== '전체'){
+    document.getElementById('hint').textContent = filter + ' ' + v.list.length + '개 · 카드를 눌러 선택하세요.';
+    app.innerHTML = '<div class="tgrid">' + v.list.map(tileHtml).join('') + '</div>';
+  }else{
+    document.getElementById('hint').textContent = '카드를 눌러 선택하세요. 여러 장을 골라 한 번에 복사할 수 있어요.';
+    const featured = ITEMS.filter(i => i.src === 'pinned');
+    const groups = {};
+    ITEMS.filter(i => i.src !== 'pinned').forEach(i => (groups[i.group] = groups[i.group] || []).push(i));
+    app.innerHTML =
+      '<div class="bar2">대표상품</div><div class="tgrid">' + featured.map(tileHtml).join('') + '</div>' +
+      CAT.groupOrder.filter(g => groups[g]).map((g, n) =>
+        '<details class="grp"' + (n < 2 ? ' open' : '') + '><summary>' + esc(g) + '<small>' + groups[g].length + '개</small></summary><div class="tgrid">' + groups[g].map(tileHtml).join('') + '</div></details>').join('');
+  }
+  renderTray();
+}
+function renderTray(){
+  const n = selected.length;
+  document.getElementById('tray').classList.toggle('show', n > 0);
+  document.body.classList.toggle('has-tray', n > 0);
+  document.getElementById('trayN').textContent = n + '장 선택됨';
+  document.getElementById('chips').innerHTML = selected.map(id => {
+    const it = ITEMS.find(x => x.id === id);
+    return '<span class="chip"><span>' + esc(it.name) + '</span><button data-rm="' + id + '" title="선택 해제">✕</button></span>';
+  }).join('');
+}
+function toggle(id){ const i = selected.indexOf(id); if(i >= 0) selected.splice(i, 1); else selected.push(id); }
+
+/* 안 뜨는 사진을 카드에 그대로 넣어 Outlook에서 깨지는 일을 막는다 */
+document.addEventListener('error', e => {
+  const img = e.target;
+  if(!(img instanceof HTMLImageElement)) return;
+  const tile = img.closest('.tile'); if(!tile) return;
+  const it = ITEMS.find(x => x.id === tile.dataset.k); if(!it) return;
+  it.img = '';
+  img.replaceWith(Object.assign(document.createElement('span'), { className:'noimg', textContent:'사진 없음' }));
+}, true);
+
+/* ---------- Outlook용 HTML ---------- */
+/* 카드 안쪽(cardHtml)은 기존 코드 그대로이고, 여러 장을 배치하는 바깥 틀만 새로 만들었다.
+   Outlook(워드 엔진)은 flex/grid/gap/margin 을 무시하므로 표(table)와 빈 칸(spacer) 셀만 쓴다. */
+function buildMailHtml(cards, n){
+  const GAP = 12, rows = [];
+  for(let i = 0; i < cards.length; i += n) rows.push(cards.slice(i, i + n));
+  const spacer = '<td width="' + GAP + '" style="width:' + GAP + 'px;font-size:1px;line-height:1px;">&nbsp;</td>';
+  const body = rows.map((r, ri) => {
+    const tds = r.map((c, ci) => (ci ? spacer : '') + '<td valign="top" width="250" style="width:250px;">' + cardHtml(c) + '</td>').join('');
+    const gapRow = ri < rows.length - 1
+      ? '<tr><td colspan="' + (r.length * 2 - 1) + '" height="' + GAP + '" style="height:' + GAP + 'px;font-size:1px;line-height:1px;">&nbsp;</td></tr>' : '';
+    return '<tr>' + tds + '</tr>' + gapRow;
+  }).join('');
+  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tbody>' + body + '</tbody></table>';
+}
+const selectedCards = () => selected.map(id => makeCard(ITEMS.find(x => x.id === id)));
+function plainLine(c){
+  let s = c.name || '';
+  if(c.model) s += ' (형번:' + c.model + ')';
+  if(c.salePrice) s += ' - ' + fmtWon(c.salePrice);
+  if(c.link) s += ' / ' + c.link;
+  return s;
+}
+function legacyCopy(html){
+  const d = document.createElement('div');
+  d.contentEditable = 'true'; d.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  d.innerHTML = html; document.body.appendChild(d);
+  const r = document.createRange(); r.selectNodeContents(d);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  let ok = false; try{ ok = document.execCommand('copy'); }catch(e){}
+  s.removeAllRanges(); d.remove(); return ok;
+}
+async function copySelected(){
+  const cards = selectedCards(); if(!cards.length) return false;
+  const html = buildMailHtml(cards, perRow), text = cards.map(plainLine).join('\n');
+  try{
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type:'text/html' }), 'text/plain': new Blob([text], { type:'text/plain' }) })]);
+    return true;
+  }catch(e){ return legacyCopy(html); }
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3800);
+}
+const OK_MSG = n => n + '장이 복사되었습니다.<br>Outlook 본문에 Ctrl+V → 모양이 이상하면 (Ctrl) 아이콘에서 "원본 서식 유지"';
+
+/* ---------- 이벤트 ---------- */
+document.getElementById('app').addEventListener('click', e => {
+  const tile = e.target.closest('.tile'); if(!tile) return;
+  toggle(tile.dataset.k);
+  tile.classList.toggle('on', selected.includes(tile.dataset.k));
+  renderTray();
+});
+document.getElementById('fchips').addEventListener('click', e => {
+  const b = e.target.closest('.fchip'); if(!b) return;
+  filter = b.dataset.f; render(); window.scrollTo({ top:0 });
+});
+document.getElementById('chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-rm]'); if(!b) return;
+  toggle(b.dataset.rm); render();
+});
+const searchEl = document.getElementById('search');
+searchEl.addEventListener('input', () => { query = searchEl.value; render(); });
+document.getElementById('clear').onclick = () => { searchEl.value = ''; query = ''; render(); searchEl.focus(); };
+document.getElementById('perRow').onchange = e => { perRow = Number(e.target.value); if(document.getElementById('modal').classList.contains('show')) openPreview(); };
+document.getElementById('btnClear').onclick = () => { selected = []; render(); };
+document.getElementById('btnCopy').onclick = async () => { const n = selected.length; toast((await copySelected()) ? OK_MSG(n) : '복사에 실패했습니다. 브라우저의 클립보드 권한을 확인해 주세요.'); };
+document.getElementById('btnMail').onclick = async () => {
+  const n = selected.length;
+  if(!(await copySelected())){ toast('복사에 실패했습니다. 브라우저의 클립보드 권한을 확인해 주세요.'); return; }
+  const a = document.createElement('a'); a.href = 'mailto:?subject='; document.body.appendChild(a); a.click(); a.remove();
+  toast(OK_MSG(n));
+};
+function openPreview(){
+  document.getElementById('mBody').innerHTML = buildMailHtml(selectedCards(), perRow);
+  document.getElementById('modal').classList.add('show');
+}
+document.getElementById('btnPreview').onclick = openPreview;
+document.getElementById('mClose').onclick = () => document.getElementById('modal').classList.remove('show');
+document.getElementById('modal').onclick = e => { if(e.target.id === 'modal') e.currentTarget.classList.remove('show'); };
+document.getElementById('mCopy').onclick = async () => { const n = selected.length; toast((await copySelected()) ? OK_MSG(n) : '복사에 실패했습니다.'); };
+
+init();
+</script>
+</body>
+</html>
